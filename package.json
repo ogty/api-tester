@@ -1,5 +1,5 @@
 {
-  "name": "api-tester",
+  "name": "api-endpoint-tester",
   "version": "1.0.0",
   "description": "Command line API Testing Tools",
   "scripts": {
