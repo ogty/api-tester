@@ -11,6 +11,7 @@ const { Form } = require("enquirer");
 
 const username = userInfo().username;
 const command = process.argv[2];
+const settingsPath = `/Users/${username}/api-tester-settings.json`
 
 const red = "\x1b[31m";
 const cyan = "\x1b[36m";
@@ -142,14 +143,12 @@ if (command === "init") {
       pathParameters: {},
     };
 
-    const filePath = `${__dirname}/data/settings.json`;
-    writeFileSync(filePath, JSON.stringify(result, null, 4));
+    writeFileSync(settingsPath, JSON.stringify(result, null, 4));
   })();
 }
 
 if (command === "setParams") {
-  const filePath = `${__dirname}/data/settings.json`;
-  const file = readFileSync(filePath, "utf-8");
+  const file = readFileSync(settingsPath, "utf-8");
   const json = JSON.parse(file);
   const { project, apiTarget, origin, pathParameters } = json;
 
@@ -189,14 +188,13 @@ if (command === "setParams") {
     .run()
     .then((value: any) => {
       json.pathParameters = value;
-      writeFileSync(filePath, JSON.stringify(json, null, 4));
+      writeFileSync(settingsPath, JSON.stringify(json, null, 4));
     })
     .catch(console.error);
 }
 
 if (command === "generate") {
-  const filePath = `${__dirname}/data/settings.json`;
-  const file = readFileSync(filePath, "utf-8");
+  const file = readFileSync(settingsPath, "utf-8");
   const json = JSON.parse(file);
   const {
     project,
