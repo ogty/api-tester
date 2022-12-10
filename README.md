@@ -7,5 +7,10 @@ $ npm install --global api-endpoint-tester
 ```zsh
 $ api-tester init
 $ api-tester setParams
-$ api-tester generate
+$ api-tester generate [select]
 ```
+
+> **Note**<br>
+>
+> - Mac users only.
+> - The `/Users/<username>/api-tester-settings.json` file will be created.

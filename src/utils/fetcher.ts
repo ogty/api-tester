@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import axios from "axios";
 
 export async function fetcher(endpoint: string) {

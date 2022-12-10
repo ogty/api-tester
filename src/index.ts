@@ -1,17 +1,16 @@
-#!/usr/bin/env node
-
 import { prompt } from "enquirer";
 import { userInfo } from "os";
 import { getEndpoint } from "./libs/getEndpoint";
 import { makeEndpointsMarkdown } from "./libs/makeEndpointsMarkdown";
-import type { EndpointConfiguration } from "@/types";
 import { writeFileSync, readFileSync } from "fs";
+import type { EndpointConfiguration, MarkdownType } from "@/types";
 
-const { Form } = require("enquirer");
+const { Form, MultiSelect } = require("enquirer");
 
 const username = userInfo().username;
 const command = process.argv[2];
-const settingsPath = `/Users/${username}/api-tester-settings.json`
+const secondCommand = process.argv[3];
+const settingsPath = `/Users/${username}/api-tester-settings.json`;
 
 const red = "\x1b[31m";
 const cyan = "\x1b[36m";
@@ -21,17 +20,18 @@ const reset = "\x1b[0m";
 const purple = "\x1b[35m";
 const yellow = "\x1b[33m";
 
-if (command === "init") {
-  (async () => {
-    console.clear();
+console.clear();
 
-    const api: any = await prompt([
-      {
-        type: "snippet",
-        name: "result",
-        message: "Please enter information about your API project.",
-        required: true,
-        template: `
+if (command === "init") {
+  try {
+    (async () => {
+      const api: any = await prompt([
+        {
+          type: "snippet",
+          name: "result",
+          message: "Please enter information about your API project.",
+          required: true,
+          template: `
   ${yellow}{${reset}
     ${gray}"${yellow}username${gray}": ${green}"${username}"${gray},
     ${gray}"${yellow}project${gray}": ${green}"/Users/${username}/\${project}${green}"${gray},
@@ -40,40 +40,44 @@ if (command === "init") {
     ${gray}"${yellow}outputFileName${gray}": ${green}"\${outputFileName:endpoints.md}${green}"
   ${yellow}}${reset}
     `,
-      },
-    ]);
+        },
+      ]);
 
-    const command: any = await prompt({
-      type: "select",
-      name: "command",
-      message: "Please select the command of the API call you want to use",
-      choices: ["curl", "http"],
-    });
+      const command: any = await prompt({
+        type: "select",
+        name: "command",
+        message: "Please select the command of the API call you want to use",
+        choices: ["curl", "http"],
+      });
 
-    const { project, apiTarget, origin, outputFileName } = api.result.values;
-    const originWithoutSlash = origin.endsWith("/")
-      ? origin.slice(0, -1)
-      : origin;
-    const markdownCodeSnippetWidth = 73;
-    const markdownListTypeWidth = 65;
-    const markdownBorderWidth = 60;
-    const paddingForCode = " ".repeat(
-      markdownCodeSnippetWidth -
-        (command.command.length + originWithoutSlash.length + 1)
-    );
-    const paddingForListTypeOne = " ".repeat(
-      markdownListTypeWidth - (originWithoutSlash.length + 1)
-    );
-    const paddingForListTypeTwo = " ".repeat(
-      markdownListTypeWidth - 8 - (originWithoutSlash.length + 1)
-    );
-    const paddingForBorder = "─".repeat(markdownBorderWidth - 4);
-    const paddingForBorderLong = "─".repeat(markdownBorderWidth - 16);
+      const { project, apiTarget, origin, outputFileName } = api.result.values;
+      const originWithoutSlash = origin.endsWith("/")
+        ? origin.slice(0, -1)
+        : origin;
+      const markdownCodeSnippetWidth = 73;
+      const markdownListTypeWidth = 65;
+      const markdownBorderWidth = 73;
+      const paddingForCode = " ".repeat(
+        markdownCodeSnippetWidth -
+          (command.command.length + originWithoutSlash.length + 1)
+      );
+      const paddingForListTypeOne = " ".repeat(
+        markdownListTypeWidth - (originWithoutSlash.length + 1)
+      );
+      const paddingForListTypeTwo = " ".repeat(
+        markdownListTypeWidth - 8 - (originWithoutSlash.length + 1)
+      );
+      const paddingForBorder = "─".repeat(
+        markdownBorderWidth - 4 - (outputFileName.length + 1)
+      );
+      const paddingForBorderLong = "─".repeat(
+        markdownBorderWidth - 16 - (outputFileName.length + 1)
+      );
 
-    const markdown: any = await prompt({
-      type: "select",
-      name: "markdown",
-      message: `
+      const markdown: any = await prompt({
+        type: "select",
+        name: "markdown",
+        message: `
     Please select the markdown format for output
 
     ╭─ ${outputFileName} - List Type ${paddingForBorder}╮
@@ -117,109 +121,145 @@ if (command === "init") {
     ╰───────────────────────────────────────────────────────────────────────────────────╯
 
     `,
-      choices: ["list", "code", "code with result"],
-    });
+        choices: ["list", "code", "code with result"] as MarkdownType[],
+      });
 
-    const savePath = await new Form({
-      name: "savePath",
-      message: "Please select the markdown output destination",
-      choices: [
-        {
-          name: "path",
-          message: "Markdown Output Destination",
-          initial: `/Users/${username}/${project}`,
-        },
-      ],
-    }).run();
+      const savePath = await new Form({
+        name: "savePath",
+        message: "Please select the markdown output destination",
+        choices: [
+          {
+            name: "path",
+            message: "Markdown Output Destination",
+            initial: `/Users/${username}/${project}`,
+          },
+        ],
+      }).run();
 
-    const result = {
-      project,
-      apiTarget,
-      origin,
-      commandType: command.command,
-      markdownType: markdown.markdown,
-      savePath: savePath.path,
-      outputFileName,
-      pathParameters: {},
-    };
+      const result = {
+        project,
+        apiTarget,
+        origin,
+        commandType: command.command,
+        markdownType: markdown.markdown,
+        savePath: savePath.path,
+        outputFileName,
+        pathParameters: {},
+      };
 
-    writeFileSync(settingsPath, JSON.stringify(result, null, 4));
-  })();
+      writeFileSync(settingsPath, JSON.stringify(result, null, 4));
+    })();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 if (command === "setParams") {
-  const file = readFileSync(settingsPath, "utf-8");
-  const json = JSON.parse(file);
-  const { project, apiTarget, origin, pathParameters } = json;
+  try {
+    const file = readFileSync(settingsPath, "utf-8");
+    const json = JSON.parse(file);
+    const { project, apiTarget, origin } = json;
 
-  const endpointConfiguration: EndpointConfiguration = {
-    project,
-    apiTarget,
-    origin,
-    username: username,
-    pathParameters: pathParameters,
-  };
-  const endpoints = getEndpoint(endpointConfiguration);
-
-  const pathParametersSet = endpoints
-    .map((endpoint) => {
-      const pathParams = endpoint.match(/:[a-zA-Z0-9]+$/g);
-      return pathParams;
-    })
-    .filter((pathParams) => pathParams !== null)
-    .flat()
-    .filter((pathParam, index, self) => self.indexOf(pathParam) === index);
-
-  const choices = pathParametersSet.map((pathParameter) => {
-    return {
-      name: pathParameter,
-      message: pathParameter,
-      initial: "",
+    const endpointConfiguration: EndpointConfiguration = {
+      project,
+      apiTarget,
+      origin,
+      username,
+      pathParameters: {},
     };
-  });
+    const endpoints = getEndpoint(endpointConfiguration);
 
-  const prompt = new Form({
-    name: "pathParameters",
-    message: "Please provide the following information:",
-    choices,
-  });
+    const pathParametersSet = endpoints
+      .map((endpoint) => {
+        const pathParams = endpoint.match(/:[a-zA-Z0-9]+$/g);
+        return pathParams;
+      })
+      .filter((pathParams) => pathParams !== null)
+      .flat()
+      .filter((pathParam, index, self) => self.indexOf(pathParam) === index);
 
-  prompt
-    .run()
-    .then((value: any) => {
-      json.pathParameters = value;
-      writeFileSync(settingsPath, JSON.stringify(json, null, 4));
-    })
-    .catch(console.error);
+    const choices = pathParametersSet.map((pathParameter) => {
+      return {
+        name: pathParameter,
+        message: pathParameter,
+        initial: "",
+      };
+    });
+
+    const prompt = new Form({
+      name: "pathParameters",
+      message: "Please provide the following information:",
+      choices,
+    });
+
+    prompt
+      .run()
+      .then((value: any) => {
+        json.pathParameters = value;
+        writeFileSync(settingsPath, JSON.stringify(json, null, 4));
+      })
+      .catch(console.error);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 if (command === "generate") {
-  const file = readFileSync(settingsPath, "utf-8");
-  const json = JSON.parse(file);
-  const {
-    project,
-    apiTarget,
-    origin,
-    pathParameters,
-    savePath,
-    outputFileName,
-    markdownType,
-    commandType,
-  } = json;
+  (async () => {
+    try {
+      const file = readFileSync(settingsPath, "utf-8");
+      const json = JSON.parse(file);
+      const {
+        project,
+        apiTarget,
+        origin,
+        pathParameters,
+        savePath,
+        outputFileName,
+        markdownType,
+        commandType,
+      } = json;
 
-  const endpointConfiguration: EndpointConfiguration = {
-    project,
-    apiTarget,
-    origin,
-    username,
-    pathParameters,
-  };
-  const endpoints = getEndpoint(endpointConfiguration);
-  const markdown = makeEndpointsMarkdown(endpoints, markdownType, commandType);
+      const endpointConfiguration: EndpointConfiguration = {
+        project,
+        apiTarget,
+        origin,
+        username,
+        pathParameters,
+      };
 
-  markdown.then((data) => {
-    writeFileSync(`${savePath}/${outputFileName}`, data);
-  });
+      let endpoints = getEndpoint(endpointConfiguration);
+      if (secondCommand === "select") {
+        const choices = endpoints.map((endpoint) => {
+          return {
+            name: endpoint,
+            message: endpoint,
+            initial: "",
+          };
+        });
+
+        const prompt = await new MultiSelect({
+          name: "value",
+          message: "Please select the endpoint to call.",
+          limit: endpoints.length,
+          choices,
+        }).run();
+        endpoints = prompt;
+      }
+
+      const markdown = makeEndpointsMarkdown(
+        endpoints,
+        markdownType,
+        commandType
+      );
+
+      markdown.then((data) => {
+        writeFileSync(`${savePath}/${outputFileName}`, data);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  })();
 }
 
 if (command === "help" || command === undefined) {
@@ -227,7 +267,7 @@ if (command === "help" || command === undefined) {
   Commands:
     init: Initialize settings
     setParams: Set path parameters
-    generate: Generate markdown file
+    generate [select]: Generate markdown file
     help: Show help
   `);
 }

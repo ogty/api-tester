@@ -1,12 +1,10 @@
-#!/usr/bin/env node
-
-import { fetcher } from "../utils/fetcher";
-import type { ApiCallCommand, MarkdownType } from "@/types";
 import {
   listTemplate,
   codeTemplate,
   codeTemplateWithResult,
 } from "../templates/markdown";
+import { fetcher } from "../utils/fetcher";
+import type { ApiCallCommand, MarkdownType } from "@/types";
 
 export async function makeEndpointsMarkdown(
   endpoints: string[],

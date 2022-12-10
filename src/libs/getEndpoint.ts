@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { glob } from "glob";
 import type { EndpointConfiguration } from "@/types";
 

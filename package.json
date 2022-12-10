@@ -1,6 +1,6 @@
 {
   "name": "api-endpoint-tester",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Command line API Testing Tools",
   "scripts": {
     "build": "webpack",

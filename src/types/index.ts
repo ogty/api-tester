@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 type PathParameters = {
   [key: string]: string | number;
 };

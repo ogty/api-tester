@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 export const listTemplate = `- [{{ short endpoint }}]({{ endpoint }})`;
 
 export const codeTemplate = `
